@@ -76,7 +76,7 @@ async def get_metrics(request: Request, body: RequestBody):
         })
 
     return JSONResponse(
-        content=results,
+        content={"regions": results},
         headers={
             "Access-Control-Allow-Origin": "*"
         },
