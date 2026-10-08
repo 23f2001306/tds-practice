@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List
 import json
@@ -8,20 +9,14 @@ from pathlib import Path
 
 app = FastAPI()
 
-# Allow POST requests from any origin
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
     allow_methods=["POST", "OPTIONS"],
     allow_headers=["*"],
+    allow_credentials=False,
 )
-
-# Load telemetry bundled with the deployment
-DATA_FILE = Path(__file__).resolve().parent.parent / "q-vercel-latency.json"
-
-with open(DATA_FILE, "r") as f:
-    telemetry = json.load(f)
 
 
 class RequestBody(BaseModel):
@@ -29,24 +24,40 @@ class RequestBody(BaseModel):
     threshold_ms: float
 
 
+DATA_FILE = Path(__file__).resolve().parent.parent / "q-vercel-latency.json"
+
+with open(DATA_FILE, "r") as f:
+    telemetry = json.load(f)
+
+
+@app.options("/api/latency")
+async def options_latency():
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
+
+
 @app.post("/api/latency")
-async def get_metrics(request: RequestBody):
+async def get_metrics(request: Request, body: RequestBody):
     results = []
 
-    for region in request.regions:
+    for region in body.regions:
         records = [
-            record
-            for record in telemetry
-            if record["region"] == region
+            r for r in telemetry
+            if r["region"] == region
         ]
 
         if not records:
             continue
 
-        latencies = [record["latency_ms"] for record in records]
-        uptimes = [record["uptime_pct"] for record in records]
+        latencies = [r["latency_ms"] for r in records]
+        uptimes = [r["uptime_pct"] for r in records]
 
-        # p95 using linear interpolation
         p95 = statistics.quantiles(
             latencies,
             n=100,
@@ -59,9 +70,14 @@ async def get_metrics(request: RequestBody):
             "p95_latency": p95,
             "avg_uptime": sum(uptimes) / len(uptimes),
             "breaches": sum(
-                latency > request.threshold_ms
-                for latency in latencies
+                x > body.threshold_ms
+                for x in latencies
             ),
         })
 
-    return results
+    return JSONResponse(
+        content=results,
+        headers={
+            "Access-Control-Allow-Origin": "*"
+        },
+    )
