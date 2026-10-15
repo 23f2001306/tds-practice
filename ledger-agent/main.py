@@ -180,7 +180,10 @@ def answer_question(question: str) -> Any:
     asks_customer = "customer" in lowered
     asks_product = "product" in lowered
     asks_region = "region" in lowered
-    asks_unique = "unique" in lowered or "distinct" in lowered
+    asks_unique = any(
+        phrase in lowered
+        for phrase in ("unique", "distinct", "different", "at least one")
+    )
     asks_top = any(
         word in lowered
         for word in ("highest", "largest", "most", "top", "best", "maximum", "maximum")
@@ -203,7 +206,7 @@ def answer_question(question: str) -> Any:
             return 0
         return max(grouped, key=grouped.get)
 
-    if is_count:
+    if is_count and not is_average:
         if asks_unique and asks_customer:
             return len({order["customer"] for order in relevant})
         if asks_unique and asks_product:
@@ -222,6 +225,7 @@ def answer_question(question: str) -> Any:
 
 @app.post("/")
 @app.post("/api/answer")
+@app.post("/api/index")
 def answer(payload: Question) -> dict[str, Any]:
     if not payload.question.strip():
         raise HTTPException(status_code=400, detail="question must not be empty")
