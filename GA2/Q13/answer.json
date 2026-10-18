@@ -1,0 +1,17 @@
+{
+  "A": {
+    "text": "Report job-da3217f2: café\nReady ✓",
+    "complete": true,
+    "error": null
+  },
+  "B": {
+    "text": "Partial job-da3217f2",
+    "complete": false,
+    "error": null
+  },
+  "C": {
+    "text": "Draft job-da3217f2",
+    "complete": false,
+    "error": "model unloaded"
+  }
+}
