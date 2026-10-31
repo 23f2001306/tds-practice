@@ -1,0 +1,4 @@
+fastapi==0.115.6
+pydantic==2.10.4
+httpx==0.28.1
+cryptography==44.0.0

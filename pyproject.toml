@@ -4,7 +4,10 @@ version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi",
-    "pydantic"
+    "mediapipe>=1.2.0",
+    "opencv-python>=5.0.0.93",
+    "pydantic",
+    "scikit-learn>=1.7.2",
 ]
 
 [tool.vercel]
